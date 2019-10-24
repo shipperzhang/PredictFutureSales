@@ -1,4 +1,5 @@
 import os
+import re
 import gzip
 import numpy as np
 
@@ -14,13 +15,19 @@ def loadData(path):
     return data
 
 def loadTrainData():
-    rawData = loadData('data/sales_train.csv.gz')
-    items = loadData('data/items.csv')
     shops = loadData('data/shops.csv')
+    shops = [s.rsplit(',',2)[0].replace('\"','') for s in shops[1:]]
+
     item_categories = loadData('data/item_categories.csv')
+    item_categories = [s.rsplit(',',2)[0] for s in item_categories[1:]]
+
+    items = loadData('data/items.csv')
+    items = [(s.rsplit(',',3)[0].replace('\"',''), s.rsplit(',',3)[2]) for s in items[1:]]
+
+    rawData = loadData('data/sales_train.csv.gz')
+    
     trainX = []
     trainY = []
-    count = 0
     for d in rawData[1:]:
         features = []
         units = d.split(',')
@@ -29,7 +36,6 @@ def loadTrainData():
         item_id = int(units[3])
         item_price = float(units[4])
         item_cnt_day = float(units[5])
-        if item_cnt_day < -1.0: print(d)
         trainX.append(features)
         trainY.append(item_cnt_day)
     trainX = np.array(trainX)

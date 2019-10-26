@@ -1,8 +1,8 @@
-from dataset import *
+from dataset import DataSet
 import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
-import pandas as pd
+import numpy as np
 
 def XGBRegressor_model(X,y):
 	# model
@@ -18,13 +18,8 @@ def XGBRegressor_model(X,y):
 	return model, score
 
 def predict_and_generate_submission_file(model, X):
-	y_pred = model.predict(X)
+	# y_pred = model.predict(X)
 	pass
-
-
-
-
-
 
 
 if __name__ == "__main__":
@@ -33,4 +28,4 @@ if __name__ == "__main__":
     """
     dataset = DataSet()
     training_X, training_y = dataset.loadTrainData()
-    testing_X = dataset.loadTestData()
+    # testing_X = dataset.loadTestData()

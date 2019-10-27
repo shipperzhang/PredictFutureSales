@@ -61,17 +61,17 @@ class DataSet():
         self.items = self.loadData('data/items.csv')
         self.items = [[s.rsplit(',',2)[0].replace('\"',''), int(s.rsplit(',',2)[2])] for s in self.items[1:]]
         vectors = self.transfer2Vec([i[0] for i in self.items], 150)
-        for i in range(len(self.items)): self.items[i] += [vectors[i],0.0]
+        for i in range(len(self.items)): self.items[i] += [vectors[i],0.1]
 
 
     def loadTrainData(self):
         trainX = []
         trainY = []
-        rawData = self.loadData('data/sales_train.csv.gz')
         if os.path.exists('trainDataFeatures.npy') and os.path.exists('trainDataLabel.npy') and False:
             trainX = np.load('trainDataFeatures.npy')
             trainY = np.load('trainDataLabel.npy')
         else:
+            rawData = self.loadData('data/sales_train.csv.gz')
             for data in rawData[1:]:
                 features = []
                 units = data.split(',')

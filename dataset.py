@@ -3,12 +3,18 @@ import re
 import gzip
 import datetime
 import numpy as np
+import statistics
+import xgboost as xgb
 
 class DataSet():
     def __init__(self):
         self.shops = None
         self.item_categories = None
         self.items = None
+        self.prices = {}
+        self.price_model = None
+        self.priceX = None
+        self.priceY = None
 
     def loadData(self, path):
         if path.endswith('.gz'):
@@ -44,6 +50,8 @@ class DataSet():
                 if word in terms:
                     vector[terms.index(word)] = float(count[word])
             vectors.append(vector)
+        # print(n)
+        # print(len([v for v in vectors if (all(np.array(v) <= 0.0)==True)]))
         return vectors
 
 
@@ -60,8 +68,8 @@ class DataSet():
 
         self.items = self.loadData('data/items.csv')
         self.items = [[s.rsplit(',',2)[0].replace('\"',''), int(s.rsplit(',',2)[2])] for s in self.items[1:]]
-        vectors = self.transfer2Vec([i[0] for i in self.items], 150)
-        for i in range(len(self.items)): self.items[i] += [vectors[i],0.1]
+        vectors = self.transfer2Vec([i[0] for i in self.items], 79)
+        for i in range(len(self.items)): self.items[i] += [vectors[i]]
 
 
     def loadTrainData(self):
@@ -72,31 +80,54 @@ class DataSet():
             trainY = np.load('trainDataLabel.npy')
         else:
             rawData = self.loadData('data/sales_train.csv.gz')
+            date_blocks = []
+            for _ in range(34): date_blocks.append({})
             for data in rawData[1:]:
-                features = []
                 units = data.split(',')
                 date = [int(u) for u in units[0].split('.')]
-                weekday = datetime.datetime(date[2],date[1],date[0]).weekday()
-                features += [float(u) for u in units[0].split('.')]
-                features.append(float(weekday))
+                dt = datetime.datetime(date[2],date[1],date[0]).year
+                block_num = int(units[1])
                 shop_id = int(units[2])
-                features += self.shops[shop_id][1]
                 item_id = int(units[3])
-                category_id = self.items[item_id][1]
-                features += self.items[item_id][2]
-                features += self.item_categories[category_id][1]
                 item_price = float(units[4])
-                self.items[item_id][3] = item_price
                 item_cnt_day = float(units[5])
-                features.append(item_price)
-                trainX.append(np.array(features))
-                trainY.append(item_cnt_day)
+                if item_cnt_day < 0.0: continue
+                key = str(shop_id) + ',' + str(item_id)
+                if self.prices.get(key, None)==None or self.prices[key][1] < dt:
+                    self.prices[key] = [item_price, dt]
+                if date_blocks[block_num].get(key, None)==None:
+                    date_blocks[block_num][key] = [[item_price],item_cnt_day]
+                else: 
+                    date_blocks[block_num][key][0].append(item_price)
+                    date_blocks[block_num][key][1] += item_cnt_day
+            for i in range(34):
+                month = float(1 + ( i % 12 ))
+                year = float(2013 + ( i // 12))
+                for key in date_blocks[i].keys():
+                    features = []
+                    shop_id = int(key.split(',')[0])
+                    item_id = int(key.split(',')[1])
+                    category_id = self.items[item_id][1]
+                    item_price = statistics.mean(date_blocks[i][key][0])
+                    item_cnt_month = date_blocks[i][key][1]
+                    features += [float(shop_id), float(item_id), float(category_id), float(year), float(month), item_price]
+                    features += self.shops[shop_id][1]
+                    features += self.items[item_id][2]
+                    features += self.item_categories[category_id][1]
+                    trainX.append(np.array(features))
+                    trainY.append(item_cnt_month)
             trainX = np.array(trainX)
             trainY = np.array(trainY)
             np.save('trainDataFeatures.npy', trainX)
             np.save('trainDataLabel.npy', trainY)
         print(np.shape(trainX)[:2])
-        print(np.shape(trainY)[:2])
+        self.priceX = np.delete(trainX, 5, 1)
+        self.priceY = trainX[:,5]
+        model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
+		    subsample = 1, eta = 0.2, num_round = 1000, seed = 1)
+        print("Train Price Model ...")
+        self.price_model = model.fit(self.priceX, self.priceY)
+        print("Done.")
         return trainX, trainY
             
     def loadTestData(self):
@@ -108,19 +139,24 @@ class DataSet():
             month = 11
             year = 2015
             for data in rawData[1:]:
+                features = []
                 units = data.split(',')
+                # ID = int(units[0])
                 shop_id = int(units[1])
                 item_id = int(units[2])
                 category_id = self.items[item_id][1]
-                for day in range(1,31):
-                    features = []
-                    weekday = datetime.datetime(year, month, day).weekday()
-                    features += [float(day), float(month), float(year), float(weekday)]
-                    features += self.shops[shop_id][1]
-                    features += self.items[item_id][2]
-                    features += self.item_categories[category_id][1]
-                    features.append(self.items[item_id][3])
-                    testX.append(np.array(features))
+                features += [float(shop_id), float(item_id), float(category_id), float(year), float(month), 0.0]
+                features += self.shops[shop_id][1]
+                features += self.items[item_id][2]
+                features += self.item_categories[category_id][1]
+                key = str(shop_id) + ',' + str(item_id)
+                if self.prices.get(key,None) == None:
+                    testP = np.array([np.delete(features, 5)])
+                    self.prices[key] = [self.price_model.predict(testP)[0],None]
+                    # if ID < 100: print(key + ',' + str(self.prices[key][0]))
+                item_price = self.prices[key][0]
+                features[5] = item_price
+                testX.append(np.array(features))
             testX = np.array(testX)
             np.save('testDataFeatures.npy', testX)
         print(np.shape(testX)[:2])

@@ -23,9 +23,7 @@ def predict_and_generate_submission_file(model, X):
 
 
 if __name__ == "__main__":
-    """
-    For Test And Debug Only
-    """
-    dataset = DataSet()
-    training_X, training_y = dataset.loadTrainData()
-    # testing_X = dataset.loadTestData()
+	dataset = DataSet()
+	dataset.loadInfo()
+	training_X, training_Y = dataset.loadTrainData()
+	testing_X = dataset.loadTestData()

@@ -50,17 +50,17 @@ class DataSet():
     def loadInfo(self):
         self.shops = self.loadData('data/shops.csv')
         self.shops = [s.rsplit(',',1)[0][1:-1].replace('\"\"','\"') for s in self.shops[1:]]
-        vectors = self.transfer2Vec(self.shops, 0)
+        vectors = self.transfer2Vec(self.shops, 1)
         for i in range(len(self.shops)): self.shops[i] = [self.shops[i], vectors[i]]
             
         self.item_categories = self.loadData('data/item_categories.csv')
         self.item_categories = [s.rsplit(',',1)[0] for s in self.item_categories[1:]]
-        vectors = self.transfer2Vec(self.item_categories, 0)
+        vectors = self.transfer2Vec(self.item_categories, 1)
         for i in range(len(self.item_categories)): self.item_categories[i] = [self.item_categories[i], vectors[i]]
 
         self.items = self.loadData('data/items.csv')
         self.items = [[s.rsplit(',',2)[0].replace('\"',''), int(s.rsplit(',',2)[2])] for s in self.items[1:]]
-        vectors = self.transfer2Vec([i[0] for i in self.items], 75)
+        vectors = self.transfer2Vec([i[0] for i in self.items], 150)
         for i in range(len(self.items)): self.items[i] += [vectors[i],0.0]
 
 
@@ -68,7 +68,7 @@ class DataSet():
         trainX = []
         trainY = []
         rawData = self.loadData('data/sales_train.csv.gz')
-        if os.path.exists('trainDataFeatures.npy') and os.path.exists('trainDataLabel.npy'):
+        if os.path.exists('trainDataFeatures.npy') and os.path.exists('trainDataLabel.npy') and False:
             trainX = np.load('trainDataFeatures.npy')
             trainY = np.load('trainDataLabel.npy')
         else:
@@ -101,7 +101,7 @@ class DataSet():
             
     def loadTestData(self):
         testX = []
-        if os.path.exists('testDataFeatures.npy'):
+        if os.path.exists('testDataFeatures.npy') and False:
             testX = np.load('testDataFeatures.npy')
         else:
             rawData = self.loadData('data/test.csv.gz')

@@ -4,17 +4,20 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 import numpy as np
 
-def XGBRegressor_model(X,y):
+def XGBRegressor_model(X,Y):
 	# model
-	model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
+	print('Setting Hyper Parameter ...')
+	model = xgb.XGBRegressor(objective='reg:squarederror', max_depth = 10, min_child_weight=0.5, \
 		subsample = 1, eta = 0.3, num_round = 1000, seed = 1)
 	# cross validation using mse
+	print('Crossing Validation ...')
 	cv = KFold(n_splits=5, shuffle=True)
-	mse_scores = cross_val_score(model, X, y, cv=cv, scoring = 'neg_mean_squared_error')
+	mse_scores = cross_val_score(model, X, Y, cv=cv, scoring = 'neg_mean_squared_error')
 	# calculate root mean square error
 	rmse_scores = np.sqrt(mse_scores)
 	# calculate average rmse
 	score = rmse_scores.mean()
+	print('Dong.')
 	return model, score
 
 def predict_and_generate_submission_file(model, X):
@@ -27,3 +30,5 @@ if __name__ == "__main__":
 	dataset.loadInfo()
 	training_X, training_Y = dataset.loadTrainData()
 	testing_X = dataset.loadTestData()
+	model, score = XGBRegressor_model(training_X, training_Y)
+	predict_and_generate_submission_file(model, testing_X)

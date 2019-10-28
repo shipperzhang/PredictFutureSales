@@ -118,16 +118,16 @@ class DataSet():
                     trainY.append(item_cnt_month)
             trainX = np.array(trainX)
             trainY = np.array(trainY)
+            self.priceX = np.delete(trainX, 5, 1)
+            self.priceY = trainX[:,5]
+            model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
+                subsample = 1, eta = 0.2, num_round = 1000, seed = 1)
+            print("Train Price Model ...")
+            self.price_model = model.fit(self.priceX, self.priceY)
+            print("Done.")
             np.save('trainDataFeatures.npy', trainX)
             np.save('trainDataLabel.npy', trainY)
         print(np.shape(trainX)[:2])
-        self.priceX = np.delete(trainX, 5, 1)
-        self.priceY = trainX[:,5]
-        model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
-		    subsample = 1, eta = 0.2, num_round = 1000, seed = 1)
-        print("Train Price Model ...")
-        self.price_model = model.fit(self.priceX, self.priceY)
-        print("Done.")
         return trainX, trainY
             
     def loadTestData(self):

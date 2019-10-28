@@ -38,9 +38,8 @@ def predict_and_generate_submission_file(model, X):
 	os.system('gzip submission.csv')
 
 if __name__ == "__main__":
+	print("Initialize the dataset.")
 	dataset = DataSet()
-	print("Loading Data Information ...")
-	dataset.loadInfo()
 	print("Loading Training Data ...")
 	training_X, training_Y = dataset.loadTrainData()
 	print("Loading Testing Data ...")

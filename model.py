@@ -25,24 +25,21 @@ def XGBRegressor_model(X,Y):
 	return model
 
 def predict_and_generate_submission_file(model, X):
-	cnt_days = model.predict(X)
-	n = len(cnt_days)
-	predictions = [0.0] * (n // 30)
-	for i in range(n):
-		ID = i // 30
-		predictions[ID] += cnt_days[i]
+	cnt_months = model.predict(X)
+	n = len(cnt_months)
 	csvfile = open('submission.csv', 'w')
 	writer = csv.writer(csvfile, delimiter=',')
 	writer.writerow(['ID', 'item_cnt_month'])
-	for i in range(n // 30):
-		writer.writerow([str(i), str(predictions[i])])
+	for i in range(n):
+		writer.writerow([str(i), str(cnt_months[i])])
 	csvfile.close()
+	if os.path.exists('submission.csv.gz'):
+		os.system('rm submission.csv.gz')
 	os.system('gzip submission.csv')
 
 if __name__ == "__main__":
+	print("Initialize the dataset.")
 	dataset = DataSet()
-	print("Loading Data Information ...")
-	dataset.loadInfo()
 	print("Loading Training Data ...")
 	training_X, training_Y = dataset.loadTrainData()
 	print("Loading Testing Data ...")

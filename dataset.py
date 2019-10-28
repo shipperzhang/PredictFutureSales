@@ -11,12 +11,17 @@ class DataSet():
         self.shops = None
         self.item_categories = None
         self.items = None
+        # save the latest price for each (shop_id, item_id) pair in training data
         self.prices = {}
+        # train a price for the (shop_id, item_id) pairs without price in training data
         self.price_model = None
         self.priceX = None
         self.priceY = None
 
     def loadData(self, path):
+        """
+        Load Data from file
+        """
         if path.endswith('.gz'):
             fopen = gzip.open
         else: fopen = open
@@ -28,6 +33,11 @@ class DataSet():
         return data
 
     def transfer2Vec(self, words, f):
+        """
+        Transfer the words array to vectors array.
+        Parameter f refers to frequency which is used to lower the feature space.
+        Specifically, we will ignore the word whose freqency is lower than f.
+        """
         terms = {}
         counts = []
         for word in words:
@@ -56,6 +66,9 @@ class DataSet():
 
 
     def loadInfo(self):
+        """
+        Load basic information for shops, items & item_categories
+        """
         self.shops = self.loadData('data/shops.csv')
         self.shops = [s.rsplit(',',1)[0][1:-1].replace('\"\"','\"') for s in self.shops[1:]]
         vectors = self.transfer2Vec(self.shops, 1)
@@ -73,6 +86,9 @@ class DataSet():
 
 
     def loadTrainData(self):
+        """
+        Load Training Data
+        """
         trainX = []
         trainY = []
         if os.path.exists('trainDataFeatures.npy') and os.path.exists('trainDataLabel.npy') and False:
@@ -80,6 +96,8 @@ class DataSet():
             trainY = np.load('trainDataLabel.npy')
         else:
             rawData = self.loadData('data/sales_train.csv.gz')
+
+            # sum up item_cnt_day to item_month_day and extract price information
             date_blocks = []
             for _ in range(34): date_blocks.append({})
             for data in rawData[1:]:
@@ -100,6 +118,8 @@ class DataSet():
                 else: 
                     date_blocks[block_num][key][0].append(item_price)
                     date_blocks[block_num][key][1] += item_cnt_day
+            
+            # generate features
             for i in range(34):
                 month = float(1 + ( i % 12 ))
                 year = float(2013 + ( i // 12))
@@ -118,6 +138,8 @@ class DataSet():
                     trainY.append(item_cnt_month)
             trainX = np.array(trainX)
             trainY = np.array(trainY)
+
+            # Train the model for the price
             self.priceX = np.delete(trainX, 5, 1)
             self.priceY = trainX[:,5]
             model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
@@ -125,17 +147,25 @@ class DataSet():
             print("Train Price Model ...")
             self.price_model = model.fit(self.priceX, self.priceY)
             print("Done.")
+
+            # Save the data for the future convenience
             np.save('trainDataFeatures.npy', trainX)
             np.save('trainDataLabel.npy', trainY)
+
         print(np.shape(trainX)[:2])
         return trainX, trainY
             
     def loadTestData(self):
+        """
+        Load Testing Data
+        """
         testX = []
         if os.path.exists('testDataFeatures.npy') and False:
             testX = np.load('testDataFeatures.npy')
         else:
             rawData = self.loadData('data/test.csv.gz')
+
+            # generate feature for each test data
             month = 11
             year = 2015
             for data in rawData[1:]:
@@ -151,6 +181,8 @@ class DataSet():
                 features += self.item_categories[category_id][1]
                 key = str(shop_id) + ',' + str(item_id)
                 if self.prices.get(key,None) == None:
+                    # Get the price from model if there is no such a (shop_id, item_id) pair 
+                    # in training data 
                     testP = np.array([np.delete(features, 5)])
                     self.prices[key] = [self.price_model.predict(testP)[0],None]
                     # if ID < 100: print(key + ',' + str(self.prices[key][0]))
@@ -158,6 +190,8 @@ class DataSet():
                 features[5] = item_price
                 testX.append(np.array(features))
             testX = np.array(testX)
+
+            # Save the data for the future convenience
             np.save('testDataFeatures.npy', testX)
         print(np.shape(testX)[:2])
         return testX

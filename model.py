@@ -6,6 +6,7 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 import numpy as np
+import logging
 
 def XGBRegressor_model(X,Y):
 	# model
@@ -38,14 +39,14 @@ def predict_and_generate_submission_file(model, X):
 	os.system('gzip submission.csv')
 
 if __name__ == "__main__":
-	print("Initialize the dataset.")
+	print("[%s] Initialize the dataset." % logging.time.ctime())
 	dataset = DataSet()
-	print("Loading Training Data ...")
-	training_X, training_Y = dataset.loadTrainData()
-	print("Loading Testing Data ...")
-	testing_X = dataset.loadTestData()
-	print("Train Model ...")
+	print("[%s] Loading Training Data ..." % logging.time.ctime())
+	training_X, training_Y = dataset.loadTrainData(True)
+	print("[%s] Loading Testing Data ..." % logging.time.ctime())
+	testing_X = dataset.loadTestData(True)
+	print("[%s] Train Model ..." % logging.time.ctime())
 	model = XGBRegressor_model(training_X, training_Y)
-	print("Predicting ...")
+	print("[%s] Predicting ..." % logging.time.ctime())
 	predict_and_generate_submission_file(model, testing_X)
-	print("Done.")
+	print("[%s] Done." % logging.time.ctime())

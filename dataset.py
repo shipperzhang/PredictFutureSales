@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 import statistics
 import xgboost as xgb
+import pandas as pd
 
 class DataSet():
     def __init__(self):
@@ -18,7 +19,7 @@ class DataSet():
         self.priceX = None
         self.priceY = None
 
-    def loadData(self, path):
+    def loadDataFromFile(self, path):
         """
         Load Data from file
         """
@@ -64,17 +65,17 @@ class DataSet():
         """
         Load basic information for shops, items & item_categories
         """
-        self.shops = self.loadData('data/shops.csv')
+        self.shops = self.loadDataFromFile('data/shops.csv')
         self.shops = [s.rsplit(',',1)[0][1:-1].replace('\"\"','\"') for s in self.shops[1:]]
         vectors = self.transfer2Vec(self.shops)
         for i in range(len(self.shops)): self.shops[i] = [self.shops[i], vectors[i]]
             
-        self.item_categories = self.loadData('data/item_categories.csv')
+        self.item_categories = self.loadDataFromFile('data/item_categories.csv')
         self.item_categories = [s.rsplit(',',1)[0] for s in self.item_categories[1:]]
         vectors = self.transfer2Vec(self.item_categories)
         for i in range(len(self.item_categories)): self.item_categories[i] = [self.item_categories[i], vectors[i]]
 
-        self.items = self.loadData('data/items.csv')
+        self.items = self.loadDataFromFile('data/items.csv')
         self.items = [[s.rsplit(',',2)[0].replace('\"',''), int(s.rsplit(',',2)[2])] for s in self.items[1:]]
         vectors = self.transfer2Vec([i[0] for i in self.items])
         for i in range(len(self.items)): self.items[i] += [vectors[i]]
@@ -91,8 +92,7 @@ class DataSet():
             trainY = np.load('trainDataLabel.npy')
         else:
             self.loadInfo()
-            rawData = self.loadData('data/sales_train.csv.gz')
-            testData = self.loadData('data/test.csv.gz')
+            testData = self.loadDataFromFile('data/test.csv.gz')
             pairsInTest = set()
             shopsInTest = set()
             for data in testData[1:]:
@@ -102,29 +102,25 @@ class DataSet():
                 pairsInTest.add(key)
                 shopsInTest.add(shop_id)
 
+            train = pd.read_csv('./data/sales_train.csv.gz')
+            train = train.loc[train['item_cnt_day'] < 3.0].loc[train['item_price'] < 1000.0]
+            train = train.groupby(["date_block_num","shop_id", "item_id"])
+            train = train.aggregate({"item_price":np.mean, "item_cnt_day":np.sum}).fillna(0)
+            train.reset_index(level=["date_block_num", "shop_id", "item_id"], inplace=True)
+
             # sum up item_cnt_day to item_month_day and extract price information
             date_blocks = []
             for _ in range(34): date_blocks.append({})
-            for data in rawData[1:]:
-                units = data.split(',')
-                date = [int(u) for u in units[0].split('.')]
-                dt = datetime.datetime(date[2],date[1],date[0]).year
-                block_num = int(units[1])
-                shop_id = int(units[2])
-                if shop_id not in shopsInTest: continue
-                item_id = int(units[3])
-                item_price = float(units[4])
-                item_cnt_day = float(units[5])
-                # if item_cnt_day < 0.0: continue
+            for _, data in train.iterrows():
+                block_num = int(data['date_block_num'])
+                shop_id = int(data['shop_id'])
+                item_id = int(data['item_id'])
+                item_price = data['item_price']
+                item_cnt_month = data['item_cnt_day']
                 key = str(shop_id) + ',' + str(item_id)
-                # if key not in pairsInTest: continue
-                if self.prices.get(key, None)==None or self.prices[key][1] < dt:
-                    self.prices[key] = [item_price, dt]
-                if date_blocks[block_num].get(key, None)==None:
-                    date_blocks[block_num][key] = [[item_price],item_cnt_day]
-                else: 
-                    date_blocks[block_num][key][0].append(item_price)
-                    date_blocks[block_num][key][1] += item_cnt_day
+                if self.prices.get(key, None) == None or self.prices[key][1] < block_num:
+                    self.prices[key] = [item_price, block_num]
+                date_blocks[block_num][key] = [item_price, item_cnt_month]
             
             # generate features
             for i in range(34):
@@ -138,10 +134,10 @@ class DataSet():
                     shop_id = int(key.split(',')[0])
                     item_id = int(key.split(',')[1])
                     category_id = self.items[item_id][1]
-                    item_price = statistics.mean(date_blocks[i][key][0])
+                    item_price = date_blocks[i][key][0]
                     item_cnt_month = date_blocks[i][key][1]
                     # if item_cnt_month < 0.0: continue
-                    features += [float(shop_id), float(item_id), float(category_id)]
+                    # features += [float(shop_id), float(item_id), float(category_id)]
                     # if year == 2015: features += [2015.0,0.0]
                     # if month == 11: features += [0.0,10.0]
                     features += [float(year), float(month)]
@@ -154,27 +150,27 @@ class DataSet():
                     itemsInTrain.add(item_id)
                     trainX.append(np.array(features))
                     trainY.append(item_cnt_month)
-                if year == 2015 or month == 11:
-                    pairsNotInTrain = set()
-                    for key in pairsInTest.difference(pairsInTrain):
-                        shop_id = int(key.split(',')[0])
-                        item_id = int(key.split(',')[1])
-                        if shop_id in shopsInTrain and item_id in itemsInTrain: 
-                            pairsNotInTrain.add(key)
-                    print(len(pairsNotInTrain))
-                    for key in pairsNotInTrain:
-                        features = []
-                        shop_id = int(key.split(',')[0])
-                        item_id = int(key.split(',')[1])
-                        category_id = self.items[item_id][1]
-                        features += [float(shop_id), float(item_id), float(category_id)]
-                        features += [float(year), float(month)]
-                        # features.append(item_price)
-                        features += self.shops[shop_id][1]
-                        features += self.items[item_id][2]
-                        features += self.item_categories[category_id][1]
-                        trainX.append(np.array(features))
-                        trainY.append(0.0)
+                # if year == 2015 or month == 11:
+                pairsNotInTrain = set()
+                for key in pairsInTest.difference(pairsInTrain):
+                    shop_id = int(key.split(',')[0])
+                    item_id = int(key.split(',')[1])
+                    if shop_id in shopsInTrain and item_id in itemsInTrain: 
+                        pairsNotInTrain.add(key)
+                print(len(pairsNotInTrain))
+                for key in pairsNotInTrain:
+                    features = []
+                    shop_id = int(key.split(',')[0])
+                    item_id = int(key.split(',')[1])
+                    category_id = self.items[item_id][1]
+                    # features += [float(shop_id), float(item_id), float(category_id)]
+                    features += [float(year), float(month)]
+                    # features.append(item_price)
+                    features += self.shops[shop_id][1]
+                    features += self.items[item_id][2]
+                    features += self.item_categories[category_id][1]
+                    trainX.append(np.array(features))
+                    trainY.append(0.0)
             
             trainX = np.array(trainX)
             trainY = np.array(trainY)
@@ -190,8 +186,8 @@ class DataSet():
             """
 
             # Save the data for the future convenience
-            np.save('trainDataFeatures.npy', trainX)
-            np.save('trainDataLabel.npy', trainY)
+            # np.save('trainDataFeatures.npy', trainX)
+            # np.save('trainDataLabel.npy', trainY)
 
         print(np.shape(trainX)[:2])
         return trainX, trainY
@@ -204,7 +200,7 @@ class DataSet():
         if os.path.exists('testDataFeatures.npy') and not reProcess:
             testX = np.load('testDataFeatures.npy')
         else:
-            rawData = self.loadData('data/test.csv.gz')
+            rawData = self.loadDataFromFile('data/test.csv.gz')
 
             # generate feature for each test data
             month = 11
@@ -216,7 +212,7 @@ class DataSet():
                 shop_id = int(units[1])
                 item_id = int(units[2])
                 category_id = self.items[item_id][1]
-                features += [float(shop_id), float(item_id), float(category_id)]
+                # features += [float(shop_id), float(item_id), float(category_id)]
                 features += [float(year), float(month)]
                 # features.append(0.0)
                 features += self.shops[shop_id][1]
@@ -237,7 +233,7 @@ class DataSet():
             testX = np.array(testX)
 
             # Save the data for the future convenience
-            np.save('testDataFeatures.npy', testX)
+            # np.save('testDataFeatures.npy', testX)
         print(np.shape(testX)[:2])
         return testX
 

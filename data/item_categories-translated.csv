@@ -41,17 +41,17 @@ item_category_id,item_category_name_translated
 39,Cinema - Blu-Ray 4K
 40,Cinema - DVD
 41,Cinema - Collector's
-42,"Books - Artbook, encyclopedia"
+42,Books - Artbook, encyclopedia
 43,Books - Audiobooks
 44,Books - Audiobooks (Numbers)
 45,Books - Audiobooks 1C
 46,Books - Business Literature
-47,"Books - Comics, manga"
+47,Books - Comics, manga
 48,Books - Computer Literature
 49,Books - Methodical materials 1С
 50,Books - Postcards
 51,Books - Cognitive Literature
-52,Книги - Путеводители
+52,Books - Travel guides
 53,Books - Fiction
 54,Books - Number
 55,Music - CD of local production
@@ -61,16 +61,16 @@ item_category_id,item_category_name_translated
 59,Music - Musical video
 60,Music - Gift edition
 61,Gifts - Attributes
-62,"Gifts - Gadgets, robots, sports"
+62,Gifts - Gadgets, robots, sports
 63,Gifts - Soft toys
 64,Gifts - Board Games
 65,Gifts - Board games (compact)
-66,"Gifts - Postcards, stickers"
+66,Gifts - Postcards, stickers
 67,Gifts - Development
-68,"Gifts - Certificates, services"
+68,Gifts - Certificates, services
 69,Gifts - Souvenirs
 70,Gifts - Souvenirs (per sample)
-71,"Gifts - Bags, Albums, Mouse pads"
+71,Gifts - Bags, Albums, Mouse pads
 72,Gifts - Figures
 73,Programs - 1C: Enterprise 8
 74,Programs - MAC (Number)
@@ -78,8 +78,8 @@ item_category_id,item_category_name_translated
 76,Programs - Home and Office (Figure)
 77,Programs - Teaching
 78,Programs - Teaching (Numbers)
-79,Office
-80,Official - Tickets
+79,Service
+80,Service - Tickets
 81,Clean carriers (spire)
 82,Clean media (piece)
 83,Elements of a food

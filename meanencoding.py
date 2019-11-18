@@ -28,6 +28,8 @@ def meanencoding():
 	train_df['item_cnt_month'] = np.array(trainY)
 	test_df = pd.DataFrame(testX,columns = ['shop_id', 'item_id', 'cat_id', 'year', 'month',  'price'])
 	test_df = test_df.drop(['price'], axis=1)
+	test_count = len(test_df)
+
 
 	# K fold Target Encoding
 	print('%0.2f min: Start adding mean-encoding for item_cnt_month'%((time.time() - start_time)/60))
@@ -52,17 +54,21 @@ def meanencoding():
 		train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1) 
 		
 	# Adding target mean encoding for test DF
-	test_df['shop_id_cnt_month_mean_Kfold'] = train_df['shop_id'].mean()
-	test_df['item_id_cnt_month_mean_Kfold'] = train_df['item_id'].mean()
-	test_df['cat_id_cnt_month_mean_Kfold'] = train_df['cat_id'].mean()
+	train_temp = train_df.copy()
+	mean_encoded_columns = ['shop_id', 'item_id', 'cat_id']
+	for column in tqdm(mean_encoded_columns):
+		temp = pd.DataFrame(np.nan, index = np.arange(test_count), columns = [column])
+		added_column_name = column + '_cnt_month_mean_Kfold'
+		test_df.loc[:,  [added_column_name]] = \
+			temp[column].map(train_temp.groupby(column)[Target].mean())
 
 	train_df = train_df.drop(['item_cnt_month'], axis=1)
 
-	#print(train_df.shape)
-	#print(train_df.head())
-	#print(test_df.shape)
-	#print(test_df.head())
-	#test_df.head(100).to_csv('myfile_test.csv')
+	print(train_df.shape)
+	print(train_df.head())
+	print(test_df.shape)
+	print(test_df.head())
+	test_df.head(100).to_csv('myfile_test.csv')
 
 	print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
 

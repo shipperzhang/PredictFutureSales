@@ -59,6 +59,7 @@ def meanencoding():
 	for column in tqdm(mean_encoded_columns):
 		temp = pd.DataFrame(np.nan, index = np.arange(test_count), columns = [column])
 		added_column_name = column + '_cnt_month_mean_Kfold'
+		test_df[added_column_name] = np.nan
 		test_df.loc[:,  [added_column_name]] = \
 			temp[column].map(train_temp.groupby(column)[Target].mean())
 

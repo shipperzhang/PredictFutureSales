@@ -137,14 +137,14 @@ class DataSet():
                     item_price = date_blocks[i][key][0]
                     item_cnt_month = date_blocks[i][key][1]
                     # if item_cnt_month < 0.0: continue
-                    # features += [float(shop_id), float(item_id), float(category_id)]
+                    features += [shop_id, item_id, category_id]
                     # if year == 2015: features += [2015.0,0.0]
                     # if month == 11: features += [0.0,10.0]
-                    features += [float(year), float(month)]
-                    # features.append(item_price)
-                    features += self.shops[shop_id][1]
-                    features += self.items[item_id][2]
-                    features += self.item_categories[category_id][1]
+                    features += [year, month]
+                    features.append(item_price)
+                    #features += self.shops[shop_id][1]
+                    #features += self.items[item_id][2]
+                    #features += self.item_categories[category_id][1]
                     pairsInTrain.add(key)
                     shopsInTrain.add(shop_id)
                     itemsInTrain.add(item_id)
@@ -157,18 +157,18 @@ class DataSet():
                     item_id = int(key.split(',')[1])
                     if shop_id in shopsInTrain and item_id in itemsInTrain: 
                         pairsNotInTrain.add(key)
-                print(len(pairsNotInTrain))
+                ###print(len(pairsNotInTrain))
                 for key in pairsNotInTrain:
                     features = []
                     shop_id = int(key.split(',')[0])
                     item_id = int(key.split(',')[1])
                     category_id = self.items[item_id][1]
-                    # features += [float(shop_id), float(item_id), float(category_id)]
-                    features += [float(year), float(month)]
-                    # features.append(item_price)
-                    features += self.shops[shop_id][1]
-                    features += self.items[item_id][2]
-                    features += self.item_categories[category_id][1]
+                    features += [shop_id, item_id, category_id]
+                    features += [year, month]
+                    features.append(item_price)
+                    #features += self.shops[shop_id][1]
+                    #features += self.items[item_id][2]
+                    #features += self.item_categories[category_id][1]
                     trainX.append(np.array(features))
                     trainY.append(0.0)
             
@@ -189,7 +189,7 @@ class DataSet():
             # np.save('trainDataFeatures.npy', trainX)
             # np.save('trainDataLabel.npy', trainY)
 
-        print(np.shape(trainX)[:2])
+        ###print(np.shape(trainX)[:2])
         return trainX, trainY
             
     def loadTestData(self, reProcess=False):
@@ -212,12 +212,12 @@ class DataSet():
                 shop_id = int(units[1])
                 item_id = int(units[2])
                 category_id = self.items[item_id][1]
-                # features += [float(shop_id), float(item_id), float(category_id)]
-                features += [float(year), float(month)]
-                # features.append(0.0)
-                features += self.shops[shop_id][1]
-                features += self.items[item_id][2]
-                features += self.item_categories[category_id][1]
+                features += [shop_id, item_id, category_id]
+                features += [year, month]
+                features.append(0.0)
+                #features += self.shops[shop_id][1]
+                #features += self.items[item_id][2]
+                #features += self.item_categories[category_id][1]
                 """
                 key = str(shop_id) + ',' + str(item_id)
                 if self.prices.get(key,None) == None:
@@ -234,7 +234,7 @@ class DataSet():
 
             # Save the data for the future convenience
             # np.save('testDataFeatures.npy', testX)
-        print(np.shape(testX)[:2])
+        ###print(np.shape(testX)[:2])
         return testX
 
 if __name__ == "__main__":
@@ -242,5 +242,9 @@ if __name__ == "__main__":
     For Test And Debug Only
     """
     dataset = DataSet()
-    dataset.loadTrainData(True)
-    dataset.loadTestData(True)
+    trainX, trainY = dataset.loadTrainData(True)
+    testX = dataset.loadTestData(True)
+    print(trainX[0])
+    print('\n')
+    print(testX[0])
+

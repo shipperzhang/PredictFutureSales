@@ -12,6 +12,8 @@ import time
 start_time = time.time()
 from tqdm import tqdm
 from sklearn.model_selection import KFold
+import dask.dataframe as dd
+
 
 def meanencoding():
 	print("[%s] Initialize the dataset." % logging.time.ctime())
@@ -26,10 +28,6 @@ def meanencoding():
 	train_df['item_cnt_month'] = np.array(trainY)
 	test_df = pd.DataFrame(testX,columns = ['shop_id', 'item_id', 'cat_id', 'year', 'month',  'price'])
 	test_df = test_df.drop(['price'], axis=1)
-
-	#print(train_with_label_df.head())
-	#print(train_df.head())
-	#print(test_df.head())
 
 	# K fold Target Encoding
 	print('%0.2f min: Start adding mean-encoding for item_cnt_month'%((time.time() - start_time)/60))
@@ -51,23 +49,22 @@ def meanencoding():
 		df_temp[added_column_name].fillna(global_mean, inplace = True)
 
 
-		train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1)
+		train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1) 
 		
 	# Adding target mean encoding for test DF
-	test_df = pd.merge(test_df, train_df[['shop_id', 'item_id', 'cat_id', \
-		'shop_id_cnt_month_mean_Kfold', 'item_id_cnt_month_mean_Kfold','cat_id_cnt_month_mean_Kfold']],\
-		on =['shop_id', 'item_id', 'cat_id'])
+	test_df['shop_id_cnt_month_mean_Kfold'] = train_df['shop_id'].mean()
+	test_df['item_id_cnt_month_mean_Kfold'] = train_df['item_id'].mean()
+	test_df['cat_id_cnt_month_mean_Kfold'] = train_df['cat_id'].mean()
 
 	train_df = train_df.drop(['item_cnt_month'], axis=1)
 
-	# print(train_df.head())
-	# print(test_df.head())
-	# train_df.head(100).to_csv('myfile.csv')
-	# test_df.head(100).to_csv('myfile_test.csv')
+	#print(train_df.shape)
+	#print(train_df.head())
+	#print(test_df.shape)
+	#print(test_df.head())
+	#test_df.head(100).to_csv('myfile_test.csv')
 
-
-
-	# print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
+	print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
 
 	mean_encoded_trainX = np.array(train_df.values.tolist())
 	mean_encoded_testX = np.array(test_df.values.tolist())

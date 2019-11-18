@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, cross_val_score, KFold, GridSearchCV
 import numpy as np
 import logging
-import meanencoding
+from meanencoding import meanencoding
 
 def XGBRegressor_model(X,Y):
 	# model
@@ -47,7 +47,8 @@ if __name__ == "__main__":
 	#training_X, training_Y = dataset.loadTrainData(True)
 	#print("[%s] Loading Testing Data ..." % logging.time.ctime())
 	#testing_X = dataset.loadTestData(True)
-	mean_encoded_trainX, mean_encoded_testX = meanencoding()
+	print("[%s] Initialize the dataset." % logging.time.ctime())
+	mean_encoded_trainX, training_Y, mean_encoded_testX = meanencoding()
 	print("[%s] Train Model ..." % logging.time.ctime())
 	model = XGBRegressor_model(mean_encoded_trainX, training_Y)
 	print("[%s] Predicting ..." % logging.time.ctime())

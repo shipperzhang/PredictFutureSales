@@ -21,8 +21,6 @@ def meanencoding():
 	print("[%s] Loading Testing Data ..." % logging.time.ctime())
 	testX = dataset.loadTestData(True)
 
-
-	
 	train_df = pd.DataFrame(trainX,columns = ['shop_id', 'item_id', 'cat_id', 'year', 'month',  'price'])
 	train_df = train_df.drop(['price'], axis=1)
 	train_df['item_cnt_month'] = np.array(trainY)
@@ -36,7 +34,7 @@ def meanencoding():
 	# K fold Target Encoding
 	print('%0.2f min: Start adding mean-encoding for item_cnt_month'%((time.time() - start_time)/60))
 	Target = 'item_cnt_month'
-	global_mean = train_with_label_df[Target].mean()
+	global_mean = train_df[Target].mean()
 
 	SEED = 0
 	kf = KFold(n_splits = 5, shuffle = False, random_state = SEED)
@@ -62,24 +60,26 @@ def meanencoding():
 
 	train_df = train_df.drop(['item_cnt_month'], axis=1)
 
-	print(train_df.head())
-	print(test_df.head())
-	train_df.head(100).to_csv('myfile.csv')
-	test_df.head(100).to_csv('myfile_test.csv')
+	# print(train_df.head())
+	# print(test_df.head())
+	# train_df.head(100).to_csv('myfile.csv')
+	# test_df.head(100).to_csv('myfile_test.csv')
 
 
 
-	print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
+	# print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
 
-	mean_encoded_trainX = train_df.values.tolist()
-	mean_encoded_testX = test_df.values.tolist()
-	print(mean_encoded_trainX[0],mean_encoded_testX[0])
+	mean_encoded_trainX = np.array(train_df.values.tolist())
+	mean_encoded_testX = np.array(test_df.values.tolist())
+	# print(mean_encoded_trainX[0],mean_encoded_testX[0])
+	print(np.shape(mean_encoded_trainX))
+	print(np.shape(mean_encoded_testX))
 
-	return mean_encoded_trainX, mean_encoded_testX
+	return mean_encoded_trainX, trainY, mean_encoded_testX
 
 
 if __name__ == "__main__":
     """
     For Test And Debug Only
     """
-    mean_encoded_trainX, mean_encoded_testX = meanencoding()
+    mean_encoded_trainX, trainY, mean_encoded_testX = meanencoding()

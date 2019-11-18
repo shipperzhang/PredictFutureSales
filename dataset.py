@@ -189,7 +189,7 @@ class DataSet():
             # np.save('trainDataFeatures.npy', trainX)
             # np.save('trainDataLabel.npy', trainY)
 
-        ###print(np.shape(trainX)[:2])
+        print(np.shape(trainX)[:2])
         return trainX, trainY
             
     def loadTestData(self, reProcess=False):
@@ -234,7 +234,7 @@ class DataSet():
 
             # Save the data for the future convenience
             # np.save('testDataFeatures.npy', testX)
-        ###print(np.shape(testX)[:2])
+        print(np.shape(testX)[:2])
         return testX
 
 if __name__ == "__main__":

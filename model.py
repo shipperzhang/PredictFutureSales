@@ -32,7 +32,8 @@ def predict_and_generate_submission_file(model, X):
 	writer = csv.writer(csvfile, delimiter=',')
 	writer.writerow(['ID', 'item_cnt_month'])
 	for i in range(n):
-		writer.writerow([str(i), str(cnt_months[i])])
+		if cnt_months[i] >= 20.0: writer.writerow([str(i), '20.0'])
+		else: writer.writerow([str(i), str(cnt_months[i])])
 	csvfile.close()
 	if os.path.exists('submission.csv.gz'):
 		os.system('rm submission.csv.gz')

@@ -47,7 +47,6 @@ if __name__ == "__main__":
 	#training_X, training_Y = dataset.loadTrainData(True)
 	#print("[%s] Loading Testing Data ..." % logging.time.ctime())
 	#testing_X = dataset.loadTestData(True)
-	print("[%s] Initialize the dataset." % logging.time.ctime())
 	mean_encoded_trainX, training_Y, mean_encoded_testX = meanencoding()
 	print("[%s] Train Model ..." % logging.time.ctime())
 	model = XGBRegressor_model(mean_encoded_trainX, training_Y)

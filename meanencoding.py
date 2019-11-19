@@ -12,7 +12,7 @@ import time
 start_time = time.time()
 from tqdm import tqdm
 from sklearn.model_selection import KFold
-import dask.dataframe as dd
+
 
 
 def meanencoding():
@@ -29,6 +29,8 @@ def meanencoding():
 	test_df = pd.DataFrame(testX,columns = ['shop_id', 'item_id', 'cat_id', 'year', 'month',  'price'])
 	test_df = test_df.drop(['price'], axis=1)
 	test_count = len(test_df)
+
+
 
 
 	# K fold Target Encoding
@@ -48,34 +50,31 @@ def meanencoding():
 			X_tr, X_val = df_temp.iloc[tr_ind], df_temp.iloc[val_ind]
 			df_temp.loc[df_temp.index[val_ind], added_column_name] = \
 						X_val[column].map(X_tr.groupby(column)[Target].mean())
+
 		df_temp[added_column_name].fillna(global_mean, inplace = True)
+		train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1)
 
 
-		train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1) 
-		
-	# Adding target mean encoding for test DF
-	train_temp = train_df.copy()
-	mean_encoded_columns = ['shop_id', 'item_id', 'cat_id']
-	for column in tqdm(mean_encoded_columns):
-		temp = pd.DataFrame(np.nan, index = np.arange(test_count), columns = [column])
-		added_column_name = column + '_cnt_month_mean_Kfold'
+		# Adding target mean encoding for test DF
+		all_test_index = np.arange(test_count)
+		temp = test_df.iloc[all_test_index]
 		test_df[added_column_name] = np.nan
-		test_df.loc[:,  [added_column_name]] = \
-			temp[column].map(train_temp.groupby(column)[Target].mean())
+		test_df.loc[:,added_column_name] = \
+			temp[column].map(train_df.groupby(column)[Target].mean())
+		print(test_df[test_df[[added_column_name]].isnull().any(axis=1)])
+		
 
 	train_df = train_df.drop(['item_cnt_month'], axis=1)
-
-	print(train_df.shape)
-	print(train_df.head())
-	print(test_df.shape)
-	print(test_df.head())
-	test_df.head(100).to_csv('myfile_test.csv')
-
+	test_df.fillna(0, inplace = True)
+	test_df.to_csv('myfile_test.csv')
 	print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
+
+
+
 
 	mean_encoded_trainX = np.array(train_df.values.tolist())
 	mean_encoded_testX = np.array(test_df.values.tolist())
-	# print(mean_encoded_trainX[0],mean_encoded_testX[0])
+	
 	print(np.shape(mean_encoded_trainX))
 	print(np.shape(mean_encoded_testX))
 

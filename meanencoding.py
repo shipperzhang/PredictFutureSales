@@ -66,9 +66,8 @@ def meanencoding():
 
 	train_df = train_df.drop(['item_cnt_month'], axis=1)
 	test_df.fillna(0, inplace = True)
-	test_df.to_csv('myfile_test.csv')
+	#test_df.to_csv('myfile_test.csv')
 	print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
-
 
 
 

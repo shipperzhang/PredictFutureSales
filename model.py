@@ -12,8 +12,8 @@ from meanencoding import meanencoding
 def XGBRegressor_model(X,Y):
 	# model
 	print('Setting Hyper Parameter ...')
-	model = xgb.XGBRegressor(max_depth = 11, min_child_weight=0.5, \
-		subsample = 1, eta = 0.3, num_round = 1000, seed = 1)
+	model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
+		subsample = 1, eta = 0.2, num_round = 1000, seed = 1)
 	print('Train the model ...')
 	model = model.fit(X,Y)
 	# cross validation using mse

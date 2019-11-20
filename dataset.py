@@ -103,10 +103,11 @@ class DataSet():
                 shopsInTest.add(shop_id)
 
             train = pd.read_csv('./data/sales_train.csv.gz')
-            train = train.loc[train['item_cnt_day'] < 3.0].loc[train['item_price'] < 1000.0]
+            train = train.loc[train['item_cnt_day'] >= -1.0].loc[train['item_cnt_day'] <= 20.0].loc[train['item_price'] <= 1000.0].loc[train['item_price'] >= 0]
             train = train.groupby(["date_block_num","shop_id", "item_id"])
             train = train.aggregate({"item_price":np.mean, "item_cnt_day":np.sum}).fillna(0)
             train.reset_index(level=["date_block_num", "shop_id", "item_id"], inplace=True)
+            train['item_cnt_day'] = train['item_cnt_day'].clip(0,20)
 
             # sum up item_cnt_day to item_month_day and extract price information
             date_blocks = []

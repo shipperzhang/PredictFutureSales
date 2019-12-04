@@ -61,7 +61,7 @@ def meanencoding():
 		test_df[added_column_name] = np.nan
 		test_df.loc[:,added_column_name] = \
 			temp[column].map(train_df.groupby(column)[Target].mean())
-		print(test_df[test_df[[added_column_name]].isnull().any(axis=1)])
+		#print(test_df[test_df[[added_column_name]].isnull().any(axis=1)])
 		
 
 	train_df = train_df.drop(['item_cnt_month'], axis=1)

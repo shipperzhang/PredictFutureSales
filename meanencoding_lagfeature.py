@@ -28,7 +28,10 @@ def meanencoding_lagfeature():
 	train_df['item_cnt_month'] = np.array(trainY)
 	test_df = pd.DataFrame(testX,columns = ['shop_id', 'item_id', 'cat_id','date_block_num', 'year', 'month',  'price'])
 	test_df = test_df.drop(['price'], axis=1)
+	train_row = int(train_df.shape[0])
+	print(train_row)
 	test_count = len(test_df)
+
 
 
 	print("[%s] Mean Encoding and Feature Engineering ..." % logging.time.ctime())
@@ -67,9 +70,10 @@ def meanencoding_lagfeature():
 
 	# Feature Engineering -- Creating lag based feature 
 	print('%0.2f min: Start adding lag based feature'%((time.time() - start_time)/60))
-	#add one column to concat
+	# add one column to concat
 	test_df['item_cnt_month'] = -1
 	train_test_df = pd.concat([train_df, test_df], axis = 0)
+
 	print('%0.2f min: Adding first lag feature -- x:1,2,3,5,6,12 month ago item_cnt_month with same shop_id&item_id'%((time.time() - start_time)/60))
 	lookback_range = [1,2,3,5,6,12]
 	for diff in tqdm(lookback_range):
@@ -92,7 +96,7 @@ def meanencoding_lagfeature():
 		result.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
 		train_test_df = train_test_df.merge(result, on = ['date_block_num'], how = 'left')
 		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
-
+	
 	print('%0.2f min: Adding third lag feature -- x:1,2,3,5,6,12 month ago average item_cnt_month with same item_id'%((time.time() - start_time)/60))
 	groups = train_test_df.groupby(by = ['item_id','date_block_num'])
 	lookback_range = [1,2,3,5,6,12]
@@ -104,7 +108,7 @@ def meanencoding_lagfeature():
 		result.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
 		train_test_df = train_test_df.merge(result, on = ['item_id','date_block_num'], how = 'left')
 		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
-
+	
 	print('%0.2f min: Adding fourth lag feature -- x:1,2,3,5,6,12 month ago average item_cnt_month with same shop_id'%((time.time() - start_time)/60))
 	groups = train_test_df.groupby(by = ['shop_id','date_block_num'])
 	lookback_range = [1,2,3,5,6,12]
@@ -116,7 +120,7 @@ def meanencoding_lagfeature():
 		result.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
 		train_test_df = train_test_df.merge(result, on = ['shop_id','date_block_num'], how = 'left')
 		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
-
+	
 	#print('%0.2f min: Adding fifth lag feature -- x:1,2,3 month ago average item_cnt_month with same cat_id'%((time.time() - start_time)/60))
 	#print('%0.2f min: Adding sixth lag feature -- x:1,2,3 month ago average item_cnt_month with same cat_id&shopid'%((time.time() - start_time)/60))
 
@@ -125,9 +129,8 @@ def meanencoding_lagfeature():
 
 	print('%0.2f min: Start generating training and testing data'%((time.time() - start_time)/60))
 	#split new train_df and test_df from train_test_df
-	train_row = train_df.shape[0]
-	new_train_df = train_test_df.iloc[:train_row,:]
-	new_test_df = train_test_df.iloc[train_row:,:]
+	new_train_df = train_test_df.iloc[:train_row]
+	new_test_df = train_test_df.iloc[train_row:]
 
 	new_train_df = new_train_df.drop(['date_block_num','item_cnt_month'], axis=1)
 	new_test_df = new_test_df.drop(['date_block_num','item_cnt_month'], axis=1)

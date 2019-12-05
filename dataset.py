@@ -141,6 +141,7 @@ class DataSet():
                     features += [shop_id, item_id, category_id]
                     # if year == 2015: features += [2015.0,0.0]
                     # if month == 11: features += [0.0,10.0]
+                    features.append(i)
                     features += [year, month]
                     features.append(item_price)
                     #features += self.shops[shop_id][1]
@@ -165,6 +166,7 @@ class DataSet():
                     item_id = int(key.split(',')[1])
                     category_id = self.items[item_id][1]
                     features += [shop_id, item_id, category_id]
+                    features.append(i)
                     features += [year, month]
                     features.append(item_price)
                     #features += self.shops[shop_id][1]
@@ -214,6 +216,7 @@ class DataSet():
                 item_id = int(units[2])
                 category_id = self.items[item_id][1]
                 features += [shop_id, item_id, category_id]
+                features.append(34)
                 features += [year, month]
                 features.append(0.0)
                 #features += self.shops[shop_id][1]

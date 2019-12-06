@@ -121,9 +121,28 @@ def meanencoding_lagfeature():
 		train_test_df = train_test_df.merge(result, on = ['shop_id','date_block_num'], how = 'left')
 		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
 	
-	#print('%0.2f min: Adding fifth lag feature -- x:1,2,3 month ago average item_cnt_month with same cat_id'%((time.time() - start_time)/60))
-	#print('%0.2f min: Adding sixth lag feature -- x:1,2,3 month ago average item_cnt_month with same cat_id&shopid'%((time.time() - start_time)/60))
-
+	print('%0.2f min: Adding fifth lag feature -- x:1,2,3 month ago average item_cnt_month with same cat_id'%((time.time() - start_time)/60))
+	groups = train_test_df.groupby(by = ['cat_id','date_block_num'])
+	lookback_range = [1,2,3]
+	for diff in tqdm(lookback_range):
+		new_feature_name = str(diff) + '_month_ago_item_cnt_month_cat'
+		result = groups.agg({'item_cnt_month':'mean'})
+		result = result.reset_index()
+		result.loc[:,'date_block_num'] += diff
+		result.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
+		train_test_df = train_test_df.merge(result, on = ['cat_id','date_block_num'], how = 'left')
+		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
+	print('%0.2f min: Adding sixth lag feature -- x:1,2,3,5,6,12 month ago average item_cnt_month with same cat_id&shop_id'%((time.time() - start_time)/60))
+	groups = train_test_df.groupby(by = ['cat_id','shop_id','date_block_num'])
+	lookback_range = [1,2,3,5,6,12]
+	for diff in tqdm(lookback_range):
+		new_feature_name = str(diff) + '_month_ago_item_cnt_month_cat_shop'
+		result = groups.agg({'item_cnt_month':'mean'})
+		result = result.reset_index()
+		result.loc[:,'date_block_num'] += diff
+		result.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
+		train_test_df = train_test_df.merge(result, on = ['cat_id','shop_id','date_block_num'], how = 'left')
+		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
 	print('%0.2f min: Finish adding lag based feature'%((time.time() - start_time)/60))
 
 

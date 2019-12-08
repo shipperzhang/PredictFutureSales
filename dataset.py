@@ -9,15 +9,10 @@ import pandas as pd
 
 class DataSet():
     def __init__(self):
-        self.shops = None
-        self.item_categories = None
-        self.items = None
-        # save the latest price for each (shop_id, item_id) pair in training data
+        self.shops = []
+        self.item_categories = []
+        self.items = []
         self.prices = {}
-        # train a price for the (shop_id, item_id) pairs without price in training data
-        self.price_model = None
-        self.priceX = None
-        self.priceY = None
 
     def loadDataFromFile(self, path):
         """
@@ -65,20 +60,57 @@ class DataSet():
         """
         Load basic information for shops, items & item_categories
         """
-        self.shops = self.loadDataFromFile('data/shops.csv')
-        self.shops = [s.rsplit(',',1)[0][1:-1].replace('\"\"','\"') for s in self.shops[1:]]
-        vectors = self.transfer2Vec(self.shops)
-        for i in range(len(self.shops)): self.shops[i] = [self.shops[i], vectors[i]]
-            
-        self.item_categories = self.loadDataFromFile('data/item_categories.csv')
-        self.item_categories = [s.rsplit(',',1)[0] for s in self.item_categories[1:]]
-        vectors = self.transfer2Vec(self.item_categories)
-        for i in range(len(self.item_categories)): self.item_categories[i] = [self.item_categories[i], vectors[i]]
-
+        cities = ['Yakutsk', 'Adygea', 'Balashikha', 'Volzhsky', 'Vologda', 'Voronezh', 
+                'Outbound Trade', 'Zhukovsky', 'Online', 'Kazan', 'Kaluga', 
+                'Kolomna', 'Krasnoyarsk', 'Kursk', 'Moscow', 'Mytishchi', 'Nizhny Novgorod', 
+                'Novosibirsk', 'Omsk', 'Rostov-on-Don','St. Petersburg','Samara','Sergiev Posad',
+                'Surgut','Tomsk','Tyumen','Ufa','Khimki','Chekhov','Yaroslavl']
+        self.shops = self.loadDataFromFile('data/shops-translated.csv')
+        self.shops = [s.split(',',1)[1] for s in self.shops[1:]]
+        self.shops = [re.sub(r'[\"\(\)]',' ', s) for s in self.shops]
+        for i in range(len(self.shops)):
+            for j in range(len(cities)):
+                if cities[j] in self.shops[i]:
+                    self.shops[i] = j
+                    break
+        
+        cat_type = ['Accessories','Tickets','Delivery','Game Consoles',
+                    'Android games','MAC Games','PC Games','Payment cards','Cinema',
+                    'Books','Music','Gifts','Programs','Service','Clean media','Batteries','PC','Games']
+        cat_subtype = {'Accessories':['PS2','PS3','PS4','PSP','PSVita','XBOX 360','XBOX ONE'],
+                       'Game Consoles':['PS2','PS3','PS4','PSP','PSVita','XBOX 360','XBOX ONE','Other'],
+                       'Games':['PS2','PS3','PS4','PSP','PSVita','XBOX 360','XBOX ONE','Accessories for games'],
+                       'PC Games':['Digit','Additional Edition', 'Collectors Edition', 'Standard Edition'],
+                       'Payment cards':['Movies, Music, Games','Live!','PSN','Windows (Digital)'],
+                       'Cinema':['Blu-Ray','DVD','Collectors'],
+                       'Books':['Artbook, encyclopedia','Audiobooks', 'Business Literature','Comics, manga','Computer Literature','Methodical materials 1C','Postcards','Cognitive Literature','Travel guides','Fiction','Number'],
+                       'Music':['CD of local production','CD of branded production','MP3','Vinyl','Musical video','Gift edition'],
+                       'Gifts':['Attributes','Gadgets, robots, sports','Soft toys','Board Games','Postcards, stickers','Development','Certificates, services','Souvenirs','Bags, Albums, Mouse pads','Figures'],
+                       'Programs':['1C: Enterprise 8','MAC (Number)','Home and Office','Teaching'],
+                       'Service':[' ','Tickets'],'Clean media':['spire','piece']}    
+        self.item_categories = self.loadDataFromFile('data/item_categories-translated.csv')
+        self.item_categories = [s.strip().split(',',1)[1].split(' - ') for s in self.item_categories[1:]]
+        # print(self.item_categories)
+        for i in range(len(self.item_categories)):
+            for j in range(len(cat_type)):
+                if cat_type[j] == self.item_categories[i][0]:
+                    self.item_categories[i][0] = j
+                    break
+            if len(self.item_categories[i]) == 1: 
+                self.item_categories[i].append(0)
+                continue
+            subtypes = cat_subtype.get(cat_type[self.item_categories[i][0]],[])
+            if not subtypes:
+                self.item_categories[i][1] = 0
+                continue
+            for j in range(len(subtypes)):
+                if subtypes[j] in self.item_categories[i][1]:
+                    self.item_categories[i][1] = j
+                    break
+        
         self.items = self.loadDataFromFile('data/items.csv')
-        self.items = [[s.rsplit(',',2)[0].replace('\"',''), int(s.rsplit(',',2)[2])] for s in self.items[1:]]
-        vectors = self.transfer2Vec([i[0] for i in self.items])
-        for i in range(len(self.items)): self.items[i] += [vectors[i]]
+        self.items = [int(s.rsplit(',',2)[2]) for s in self.items[1:]]
+
 
 
     def loadTrainData(self, reProcess=False):
@@ -134,59 +166,45 @@ class DataSet():
                     features = []
                     shop_id = int(key.split(',')[0])
                     item_id = int(key.split(',')[1])
-                    category_id = self.items[item_id][1]
+                    category_id = self.items[item_id]
                     item_price = date_blocks[i][key][0]
                     item_cnt_month = date_blocks[i][key][1]
-                    # if item_cnt_month < 0.0: continue
                     features += [shop_id, item_id, category_id]
-                    # if year == 2015: features += [2015.0,0.0]
-                    # if month == 11: features += [0.0,10.0]
                     features.append(i)
                     features += [year, month]
-                    features.append(item_price)
-                    #features += self.shops[shop_id][1]
-                    #features += self.items[item_id][2]
-                    #features += self.item_categories[category_id][1]
+                    features.append(self.shops[shop_id])
+                    features.append(self.item_categories[category_id][0])
+                    features.append(self.item_categories[category_id][1])
+                    # features.append(item_price)
                     pairsInTrain.add(key)
                     shopsInTrain.add(shop_id)
                     itemsInTrain.add(item_id)
                     trainX.append(np.array(features))
                     trainY.append(item_cnt_month)
-                # if year == 2015 or month == 11:
-                pairsNotInTrain = set()
-                for key in pairsInTest.difference(pairsInTrain):
-                    shop_id = int(key.split(',')[0])
-                    item_id = int(key.split(',')[1])
-                    if shop_id in shopsInTrain and item_id in itemsInTrain: 
-                        pairsNotInTrain.add(key)
-                ###print(len(pairsNotInTrain))
+                pairsNotInTrain = pairsInTest.difference(pairsInTrain)
+                # for key in pairsInTest.difference(pairsInTrain):
+                #     shop_id = int(key.split(',')[0])
+                #     item_id = int(key.split(',')[1])
+                #     if shop_id in shopsInTrain and item_id in itemsInTrain: 
+                #         pairsNotInTrain.add(key)
+                print(len(pairsNotInTrain))
                 for key in pairsNotInTrain:
                     features = []
                     shop_id = int(key.split(',')[0])
                     item_id = int(key.split(',')[1])
-                    category_id = self.items[item_id][1]
+                    category_id = self.items[item_id]
                     features += [shop_id, item_id, category_id]
                     features.append(i)
                     features += [year, month]
-                    features.append(item_price)
-                    #features += self.shops[shop_id][1]
-                    #features += self.items[item_id][2]
-                    #features += self.item_categories[category_id][1]
+                    features.append(self.shops[shop_id])
+                    features.append(self.item_categories[category_id][0])
+                    features.append(self.item_categories[category_id][1])
+                    # features.append(item_price)
                     trainX.append(np.array(features))
                     trainY.append(0.0)
             
             trainX = np.array(trainX)
             trainY = np.array(trainY)
-            """
-            # Train the model for the price
-            self.priceX = np.delete(trainX, 5, 1)
-            self.priceY = trainX[:,5]
-            model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
-                subsample = 1, eta = 0.2, num_round = 1000, seed = 1)
-            print("Train Price Model ...")
-            self.price_model = model.fit(self.priceX, self.priceY)
-            print("Done.")
-            """
 
             # Save the data for the future convenience
             # np.save('trainDataFeatures.npy', trainX)
@@ -214,25 +232,14 @@ class DataSet():
                 # ID = int(units[0])
                 shop_id = int(units[1])
                 item_id = int(units[2])
-                category_id = self.items[item_id][1]
+                category_id = self.items[item_id]
                 features += [shop_id, item_id, category_id]
                 features.append(34)
                 features += [year, month]
+                features.append(self.shops[shop_id])
+                features.append(self.item_categories[category_id][0])
+                features.append(self.item_categories[category_id][1])
                 features.append(0.0)
-                #features += self.shops[shop_id][1]
-                #features += self.items[item_id][2]
-                #features += self.item_categories[category_id][1]
-                """
-                key = str(shop_id) + ',' + str(item_id)
-                if self.prices.get(key,None) == None:
-                    # Get the price from model if there is no such a (shop_id, item_id) pair 
-                    # in training data 
-                    testP = np.array([np.delete(features, 5)])
-                    self.prices[key] = [self.price_model.predict(testP)[0],None]
-                    # if ID < 100: print(key + ',' + str(self.prices[key][0]))
-                item_price = self.prices[key][0]
-                features[5] = item_price
-                """
                 testX.append(np.array(features))
             testX = np.array(testX)
 
@@ -246,9 +253,10 @@ if __name__ == "__main__":
     For Test And Debug Only
     """
     dataset = DataSet()
+    # dataset.loadInfo()
     trainX, trainY = dataset.loadTrainData(True)
     testX = dataset.loadTestData(True)
-    print(trainX[0])
-    print('\n')
-    print(testX[0])
+    # print(trainX[0])
+    # print('\n')
+    # print(testX[0])
 

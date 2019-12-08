@@ -7,8 +7,8 @@ item_category_id,item_category_name_translated
 5,Accessories - PSVita
 6,Accessories - XBOX 360
 7,Accessories - XBOX ONE
-8,Tickets (figure)
-9,Delivery of goods
+8,Tickets - Digit
+9,Delivery
 10,Game Consoles - PS2
 11,Game Consoles - PS3
 12,Game Consoles - PS4
@@ -28,19 +28,19 @@ item_category_id,item_category_name_translated
 26,Android games - Digit
 27,MAC Games - Digit
 28,PC Games - Additional Edition
-29,PC Games - Collector's Edition
+29,PC Games - Collectors Edition
 30,PC Games - Standard Edition
 31,PC Games - Digit
-32,"Payment cards (Movies, Music, Games)"
+32,Payment cards - Movies, Music, Games
 33,Payment cards - Live!
 34,Payment cards - Live! (Numeral)
 35,Payment cards - PSN
-36,Payment Cards - Windows (Digital)
+36,Payment cards - Windows (Digital)
 37,Cinema - Blu-Ray
 38,Cinema - Blu-Ray 3D
 39,Cinema - Blu-Ray 4K
 40,Cinema - DVD
-41,Cinema - Collector's
+41,Cinema - Collectors
 42,Books - Artbook, encyclopedia
 43,Books - Audiobooks
 44,Books - Audiobooks (Numbers)
@@ -48,7 +48,7 @@ item_category_id,item_category_name_translated
 46,Books - Business Literature
 47,Books - Comics, manga
 48,Books - Computer Literature
-49,Books - Methodical materials 1С
+49,Books - Methodical materials 1C
 50,Books - Postcards
 51,Books - Cognitive Literature
 52,Books - Travel guides
@@ -64,7 +64,7 @@ item_category_id,item_category_name_translated
 62,Gifts - Gadgets, robots, sports
 63,Gifts - Soft toys
 64,Gifts - Board Games
-65,Gifts - Board games (compact)
+65,Gifts - Board Games (compact)
 66,Gifts - Postcards, stickers
 67,Gifts - Development
 68,Gifts - Certificates, services
@@ -80,6 +80,6 @@ item_category_id,item_category_name_translated
 78,Programs - Teaching (Numbers)
 79,Service
 80,Service - Tickets
-81,Clean carriers (spire)
-82,Clean media (piece)
-83,Elements of a food
+81,Clean media - spire
+82,Clean media - piece
+83,Batteries

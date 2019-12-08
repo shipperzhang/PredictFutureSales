@@ -23,10 +23,10 @@ def meanencoding_lagfeature():
 	print("[%s] Loading Testing Data ..." % logging.time.ctime())
 	testX = dataset.loadTestData(True)
 
-	train_df = pd.DataFrame(trainX,columns = ['shop_id', 'item_id', 'cat_id', 'date_block_num','year', 'month',  'price'])
+	train_df = pd.DataFrame(trainX,columns = ['shop_id', 'item_id', 'cat_id', 'date_block_num','year', 'month',  'price', 'city_code', 'type_id','sub_type_id'])
 	train_df = train_df.drop(['price'], axis=1)
 	train_df['item_cnt_month'] = np.array(trainY)
-	test_df = pd.DataFrame(testX,columns = ['shop_id', 'item_id', 'cat_id','date_block_num', 'year', 'month',  'price'])
+	test_df = pd.DataFrame(testX,columns = ['shop_id', 'item_id', 'cat_id','date_block_num', 'year', 'month',  'price', 'city_code', 'type_id','sub_type_id'])
 	test_df = test_df.drop(['price'], axis=1)
 	train_row = int(train_df.shape[0])
 	print(train_row)

@@ -160,8 +160,6 @@ class DataSet():
                 month = 1 + ( i % 12 )
                 year = 2013 + ( i // 12)
                 pairsInTrain = set()
-                shopsInTrain = set()
-                itemsInTrain = set()
                 for key in date_blocks[i].keys():
                     features = []
                     shop_id = int(key.split(',')[0])
@@ -175,19 +173,11 @@ class DataSet():
                     features.append(self.shops[shop_id])
                     features.append(self.item_categories[category_id][0])
                     features.append(self.item_categories[category_id][1])
-                    # features.append(item_price)
+                    features.append(item_price)
                     pairsInTrain.add(key)
-                    shopsInTrain.add(shop_id)
-                    itemsInTrain.add(item_id)
                     trainX.append(np.array(features))
                     trainY.append(item_cnt_month)
                 pairsNotInTrain = pairsInTest.difference(pairsInTrain)
-                # for key in pairsInTest.difference(pairsInTrain):
-                #     shop_id = int(key.split(',')[0])
-                #     item_id = int(key.split(',')[1])
-                #     if shop_id in shopsInTrain and item_id in itemsInTrain: 
-                #         pairsNotInTrain.add(key)
-                print(len(pairsNotInTrain))
                 for key in pairsNotInTrain:
                     features = []
                     shop_id = int(key.split(',')[0])
@@ -199,7 +189,7 @@ class DataSet():
                     features.append(self.shops[shop_id])
                     features.append(self.item_categories[category_id][0])
                     features.append(self.item_categories[category_id][1])
-                    # features.append(item_price)
+                    features.append(0.0)
                     trainX.append(np.array(features))
                     trainY.append(0.0)
             

@@ -151,8 +151,8 @@ def meanencoding_lagfeature():
 	new_train_df = train_test_df.iloc[:train_row]
 	new_test_df = train_test_df.iloc[train_row:]
 
-	new_train_df = new_train_df.drop(['date_block_num','item_cnt_month'], axis=1)
-	new_test_df = new_test_df.drop(['date_block_num','item_cnt_month'], axis=1)
+	new_train_df = new_train_df.drop(['cat_id','date_block_num','item_cnt_month'], axis=1)
+	new_test_df = new_test_df.drop(['cat_id','date_block_num','item_cnt_month'], axis=1)
 
 	new_train_df.head().to_csv('train_df_head.csv')
 	new_test_df.head().to_csv('test_df_head.csv')

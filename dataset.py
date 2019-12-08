@@ -12,7 +12,8 @@ class DataSet():
         self.shops = []
         self.item_categories = []
         self.items = []
-        self.prices = {}
+        self.general_prices = []
+        self.cloest_prices = []
 
     def loadDataFromFile(self, path):
         """
@@ -27,33 +28,6 @@ class DataSet():
                 if isinstance(line, bytes): line = line.decode('utf-8')
                 data.append(line.strip())
         return data
-
-    def transfer2Vec(self, words):
-        """
-        Transfer the words array to vectors array.
-        """
-        terms = set()
-        counts = []
-        for word in words:
-            terms_in_word = {}
-            pword = re.sub(r'[\[\],\"\(\)\.\-:]',' ',word)
-            for c in pword.split():
-                if len(c) > 0: 
-                    terms.add(c)
-                    terms_in_word[c] = '1'
-            counts.append(terms_in_word)
-        terms = list(terms)
-        n = len(terms)
-        vectors = []
-        for count in counts:
-            ir = ['0'] * n
-            for word in count.keys():
-                ir[terms.index(word)] = count[word]
-            vector = []
-            for i in range((n // 128) + 1):
-                vector.append(float(int(''.join(ir[i*128:(i+1)*128]),2)))
-            vectors.append(vector)
-        return vectors
 
 
     def loadInfo(self):
@@ -110,8 +84,8 @@ class DataSet():
         
         self.items = self.loadDataFromFile('data/items.csv')
         self.items = [int(s.rsplit(',',2)[2]) for s in self.items[1:]]
-
-
+        self.general_prices = [None] * len(self.items)
+        self.cloest_prices = [None] * len(self.items)
 
     def loadTrainData(self, reProcess=False):
         """
@@ -126,16 +100,14 @@ class DataSet():
             self.loadInfo()
             testData = self.loadDataFromFile('data/test.csv.gz')
             pairsInTest = set()
-            shopsInTest = set()
             for data in testData[1:]:
                 shop_id = int(data.split(',')[1])
                 item_id = int(data.split(',')[2])
                 key = str(shop_id) + ',' + str(item_id)
                 pairsInTest.add(key)
-                shopsInTest.add(shop_id)
 
             train = pd.read_csv('./data/sales_train.csv.gz')
-            train = train.loc[train['item_cnt_day'] >= -1.0].loc[train['item_cnt_day'] <= 20.0].loc[train['item_price'] <= 1000.0].loc[train['item_price'] >= 0]
+            train = train.loc[train['item_cnt_day'] >= -1.0].loc[train['item_cnt_day'] <= 20.0].loc[train['item_price'] <= 2000.0].loc[train['item_price'] >= 0]
             train = train.groupby(["date_block_num","shop_id", "item_id"])
             train = train.aggregate({"item_price":np.mean, "item_cnt_day":np.sum}).fillna(0)
             train.reset_index(level=["date_block_num", "shop_id", "item_id"], inplace=True)
@@ -151,17 +123,16 @@ class DataSet():
                 item_price = data['item_price']
                 item_cnt_month = data['item_cnt_day']
                 key = str(shop_id) + ',' + str(item_id)
-                if self.prices.get(key, None) == None or self.prices[key][1] < block_num:
-                    self.prices[key] = [item_price, block_num]
                 date_blocks[block_num][key] = [item_price, item_cnt_month]
             
             # generate features
+            shopsInTrain = set()
+            itemsInTrain = set()
             for i in range(34):
                 month = 1 + ( i % 12 )
                 year = 2013 + ( i // 12)
                 pairsInTrain = set()
-                shopsInTrain = set()
-                itemsInTrain = set()
+                this_month = [None] * len(self.items)
                 for key in date_blocks[i].keys():
                     features = []
                     shop_id = int(key.split(',')[0])
@@ -169,6 +140,7 @@ class DataSet():
                     category_id = self.items[item_id]
                     item_price = date_blocks[i][key][0]
                     item_cnt_month = date_blocks[i][key][1]
+
                     features += [shop_id, item_id, category_id]
                     features.append(i)
                     features += [year, month]
@@ -176,17 +148,27 @@ class DataSet():
                     features.append(self.item_categories[category_id][0])
                     features.append(self.item_categories[category_id][1])
                     features.append(item_price)
+                    
+                    if this_month[item_id] == None:
+                        this_month[item_id] = [item_price, 1]
+                    else:
+                        ave, count = this_month[item_id]
+                        ave = (ave * count + item_price) / count
+                        this_month[item_id] = [ave, count + 1]
+
                     pairsInTrain.add(key)
                     shopsInTrain.add(shop_id)
                     itemsInTrain.add(item_id)
                     trainX.append(np.array(features))
                     trainY.append(item_cnt_month)
+
                 pairsNotInTrain = set()
                 for key in pairsInTest.difference(pairsInTrain):
                     shop_id = int(key.split(',')[0])
                     item_id = int(key.split(',')[1])
                     if shop_id in shopsInTrain and item_id in itemsInTrain: 
                         pairsNotInTrain.add(key)
+
                 for key in pairsNotInTrain:
                     features = []
                     shop_id = int(key.split(',')[0])
@@ -198,9 +180,29 @@ class DataSet():
                     features.append(self.shops[shop_id])
                     features.append(self.item_categories[category_id][0])
                     features.append(self.item_categories[category_id][1])
-                    features.append(0.0)
+
+                    if self.cloest_prices[item_id] == None:
+                        print(i,item_id)
+                        features.append(this_month[item_id][0])
+                    else:
+                        previous = self.cloest_prices[item_id]
+                        general = self.general_prices[item_id][0]
+                        item_price = previous * (1 + ((previous - general) / general))
+                        features.append(item_price)
+
                     trainX.append(np.array(features))
                     trainY.append(0.0)
+                
+                for i in range(len(this_month)):
+                    if this_month[i] == None: continue
+                    ave, count = this_month[i]
+                    self.cloest_prices[i] = ave
+                    if self.general_prices[i] == None: 
+                        self.general_prices[i] = [ave, count]
+                    else:
+                        gave, gcount = self.general_prices[i]
+                        gave = (gave * gcount + ave * count) / (gcount + count)
+                        self.general_prices[i] = [gave, gcount + count]
             
             trainX = np.array(trainX)
             trainY = np.array(trainY)
@@ -238,7 +240,12 @@ class DataSet():
                 features.append(self.shops[shop_id])
                 features.append(self.item_categories[category_id][0])
                 features.append(self.item_categories[category_id][1])
-                features.append(0.0)
+
+                previous = self.cloest_prices[item_id]
+                general = self.general_prices[item_id][0]
+                item_price = previous * (1 + ((previous - general) / general))
+                features.append(item_price)
+                
                 testX.append(np.array(features))
             testX = np.array(testX)
 
@@ -255,6 +262,7 @@ if __name__ == "__main__":
     # dataset.loadInfo()
     trainX, trainY = dataset.loadTrainData(True)
     testX = dataset.loadTestData(True)
+    print(testX[:100])
     # print(trainX[0])
     # print('\n')
     # print(testX[0])

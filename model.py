@@ -12,11 +12,11 @@ from meanencoding_lagfeature import meanencoding_lagfeature
 def XGBRegressor_model(X,Y):
 	# model
 	print('Setting Hyper Parameter ...')
-	model = xgb.XGBRegressor(max_depth = 10, min_child_weight=0.5, \
-		subsample = 1, eta = 0.2, num_round = 1000, seed = 1)
+	model = xgb.XGBRegressor(max_depth = 6, min_child_weight=3, \
+		eta = 0.05, num_round = 200)
 	print('Train the model ...')
 	model = model.fit(X,Y)
-	# cross validation using mse
+	# # cross validation using mse
 	# print('Crossing Validation ...')
 	# cv = KFold(n_splits=5, shuffle=True)
 	# mse_scores = cross_val_score(model, X, Y, cv=cv, scoring = 'neg_mean_squared_error')
@@ -41,12 +41,6 @@ def predict_and_generate_submission_file(model, X):
 	os.system('gzip submission.csv')
 
 if __name__ == "__main__":
-	#print("[%s] Initialize the dataset." % logging.time.ctime())
-	#dataset = DataSet()
-	#print("[%s] Loading Training Data ..." % logging.time.ctime())
-	#training_X, training_Y = dataset.loadTrainData(True)
-	#print("[%s] Loading Testing Data ..." % logging.time.ctime())
-	#testing_X = dataset.loadTestData(True)
 	mean_encoded_trainX, training_Y, mean_encoded_testX = meanencoding_lagfeature()
 	print("[%s] Train Model ..." % logging.time.ctime())
 	model = XGBRegressor_model(mean_encoded_trainX, training_Y)

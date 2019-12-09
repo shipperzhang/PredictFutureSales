@@ -75,15 +75,26 @@ def meanencoding_lagfeature():
 	train_test_df = pd.concat([train_df, test_df], axis = 0)
 
 	print('%0.2f min: Adding first lag feature -- x:1,2,3,6,12 month ago item_cnt_month with same shop_id&item_id'%((time.time() - start_time)/60))
+	# lookback_range = [1,2,3,6,12]
+	# for diff in tqdm(lookback_range):
+	# 	new_feature_name = str(diff) + '_month_ago_item_cnt_month_same_shop_item'
+	# 	train_test_df_temp = train_test_df.copy()
+	# 	train_test_df_temp.loc[:,'date_block_num'] += diff
+	# 	train_test_df_temp.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
+	# 	train_test_df = train_test_df.merge(train_test_df_temp[['shop_id_cnt_month_mean_Kfold','item_id_cnt_month_mean_Kfold','date_block_num', new_feature_name]],\
+	# 	 		on = ['shop_id_cnt_month_mean_Kfold','item_id_cnt_month_mean_Kfold','date_block_num'], how = 'left')
+	# 	train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
+	groups = train_test_df.groupby(by = ['item_id_cnt_month_mean_Kfold', 'shop_id_cnt_month_mean_Kfold','date_block_num'])
 	lookback_range = [1,2,3,6,12]
 	for diff in tqdm(lookback_range):
 		new_feature_name = str(diff) + '_month_ago_item_cnt_month_same_shop_item'
-		train_test_df_temp = train_test_df.copy()
-		train_test_df_temp.loc[:,'date_block_num'] += diff
-		train_test_df_temp.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
-		train_test_df = train_test_df.merge(train_test_df_temp[['shop_id_cnt_month_mean_Kfold','item_id_cnt_month_mean_Kfold','date_block_num', new_feature_name]],\
-		 		on = ['shop_id_cnt_month_mean_Kfold','item_id_cnt_month_mean_Kfold','date_block_num'], how = 'left')
+		result = groups.agg({'item_cnt_month':'mean'})
+		result = result.reset_index()
+		result.loc[:,'date_block_num'] += diff
+		result.rename(columns={'item_cnt_month':new_feature_name}, inplace = True)
+		train_test_df = train_test_df.merge(result, on = ['item_id_cnt_month_mean_Kfold', 'shop_id_cnt_month_mean_Kfold','date_block_num'], how = 'left')
 		train_test_df[new_feature_name] = train_test_df[new_feature_name].fillna(0)
+	
 
 	print('%0.2f min: Adding second lag feature -- x:1 month ago average item_cnt_month in all'%((time.time() - start_time)/60))
 	groups = train_test_df.groupby(by = ['date_block_num'])

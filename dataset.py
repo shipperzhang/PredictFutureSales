@@ -14,6 +14,7 @@ class DataSet():
         self.items = []
         self.general_prices = []
         self.cloest_prices = []
+        self.other_prices = []
 
     def loadDataFromFile(self, path):
         """
@@ -64,7 +65,7 @@ class DataSet():
                        'Service':[' ','Tickets'],'Clean media':['spire','piece']}    
         self.item_categories = self.loadDataFromFile('data/item_categories-translated.csv')
         self.item_categories = [s.strip().split(',',1)[1].split(' - ') for s in self.item_categories[1:]]
-        # print(self.item_categories)
+        self.other_prices = [None] * len(self.item_categories)
         for i in range(len(self.item_categories)):
             for j in range(len(cat_type)):
                 if cat_type[j] == self.item_categories[i][0]:
@@ -153,8 +154,15 @@ class DataSet():
                         this_month[item_id] = [item_price, 1]
                     else:
                         ave, count = this_month[item_id]
-                        ave = (ave * count + item_price) / count
+                        ave = (ave * count + item_price) / (count + 1)
                         this_month[item_id] = [ave, count + 1]
+
+                    if self.other_prices[category_id] == None:
+                        self.other_prices[category_id] = [item_price, 1]
+                    else:
+                        ave, count = self.other_prices[category_id]
+                        ave = (ave * count + item_price) / (count + 1)
+                        self.other_prices[category_id] = [ave, count + 1]
 
                     pairsInTrain.add(key)
                     shopsInTrain.add(shop_id)
@@ -181,8 +189,7 @@ class DataSet():
                     features.append(self.item_categories[category_id][0])
                     features.append(self.item_categories[category_id][1])
 
-                    if self.cloest_prices[item_id] == None:
-                        print(i,item_id)
+                    if this_month[item_id] != None:
                         features.append(this_month[item_id][0])
                     else:
                         previous = self.cloest_prices[item_id]
@@ -241,10 +248,13 @@ class DataSet():
                 features.append(self.item_categories[category_id][0])
                 features.append(self.item_categories[category_id][1])
 
-                previous = self.cloest_prices[item_id]
-                general = self.general_prices[item_id][0]
-                item_price = previous * (1 + ((previous - general) / general))
-                features.append(item_price)
+                if self.cloest_prices[item_id] == None:
+                    features.append(self.other_prices[category_id][0])
+                else:
+                    previous = self.cloest_prices[item_id]
+                    general = self.general_prices[item_id][0]
+                    item_price = previous * (1 + ((previous - general) / general))
+                    features.append(item_price)
                 
                 testX.append(np.array(features))
             testX = np.array(testX)
@@ -262,7 +272,7 @@ if __name__ == "__main__":
     # dataset.loadInfo()
     trainX, trainY = dataset.loadTrainData(True)
     testX = dataset.loadTestData(True)
-    print(testX[:100])
+    # print(testX[:100])
     # print(trainX[0])
     # print('\n')
     # print(testX[0])

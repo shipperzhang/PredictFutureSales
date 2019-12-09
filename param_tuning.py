@@ -31,7 +31,7 @@ def param_tuning(X,Y):
 		# outer loop calculate accuracy
 		mse = model.score(X_test, y_test)
 		rmse = np.sqrt(mse)
-		print("The parameters chosen by inner CV loop are:  %s, the corresponding testing accuracy is %s\n" % (best_params, accuracy4) )
+		print("The parameters chosen by inner CV loop are:  %s, the corresponding testing accuracy is %s\n" % (best_params, rmse) )
 
 
 if __name__ == "__main__":

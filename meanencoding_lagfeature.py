@@ -35,37 +35,37 @@ def meanencoding_lagfeature():
 
 
 	print("[%s] Mean Encoding and Feature Engineering ..." % logging.time.ctime())
-	# K fold Target Encoding
-	print('%0.2f min: Start adding mean-encoding for item_cnt_month'%((time.time() - start_time)/60))
-	Target = 'item_cnt_month'
-	global_mean = train_df[Target].mean()
+	# # K fold Target Encoding
+	# print('%0.2f min: Start adding mean-encoding for item_cnt_month'%((time.time() - start_time)/60))
+	# Target = 'item_cnt_month'
+	# global_mean = train_df[Target].mean()
 
-	SEED = 0
-	kf = KFold(n_splits = 5, shuffle = False, random_state = SEED)
+	# SEED = 0
+	# kf = KFold(n_splits = 5, shuffle = False, random_state = SEED)
 
-	mean_encoded_columns = ['shop_id', 'item_id', 'cat_id']
-	for column in tqdm(mean_encoded_columns):
-		added_column_name = column + '_cnt_month_mean_Kfold'
-		df_temp = train_df[[column]+[Target]]
-		df_temp[added_column_name] = global_mean
-		for tr_ind, val_ind in kf.split(df_temp):
-			X_tr, X_val = df_temp.iloc[tr_ind], df_temp.iloc[val_ind]
-			df_temp.loc[df_temp.index[val_ind], added_column_name] = \
-						X_val[column].map(X_tr.groupby(column)[Target].mean())
+	# mean_encoded_columns = ['shop_id', 'item_id', 'cat_id']
+	# for column in tqdm(mean_encoded_columns):
+	# 	added_column_name = column + '_cnt_month_mean_Kfold'
+	# 	df_temp = train_df[[column]+[Target]]
+	# 	df_temp[added_column_name] = global_mean
+	# 	for tr_ind, val_ind in kf.split(df_temp):
+	# 		X_tr, X_val = df_temp.iloc[tr_ind], df_temp.iloc[val_ind]
+	# 		df_temp.loc[df_temp.index[val_ind], added_column_name] = \
+	# 					X_val[column].map(X_tr.groupby(column)[Target].mean())
 
-		df_temp[added_column_name].fillna(global_mean, inplace = True)
-		train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1)
+	# 	df_temp[added_column_name].fillna(global_mean, inplace = True)
+	# 	train_df = pd.concat([train_df, df_temp[added_column_name]],axis = 1)
 
-		# Adding target mean encoding for test DF
-		all_test_index = np.arange(test_count)
-		temp = test_df.iloc[all_test_index]
-		test_df[added_column_name] = np.nan
-		test_df.loc[:,added_column_name] = \
-			temp[column].map(train_df.groupby(column)[Target].mean())
-		#print(test_df[test_df[[added_column_name]].isnull().any(axis=1)])
+	# 	# Adding target mean encoding for test DF
+	# 	all_test_index = np.arange(test_count)
+	# 	temp = test_df.iloc[all_test_index]
+	# 	test_df[added_column_name] = np.nan
+	# 	test_df.loc[:,added_column_name] = \
+	# 		temp[column].map(train_df.groupby(column)[Target].mean())
+	# 	#print(test_df[test_df[[added_column_name]].isnull().any(axis=1)])
 		
-	test_df.fillna(0, inplace = True)
-	print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
+	# test_df.fillna(0, inplace = True)
+	# print('%0.2f min: Finish adding mean-encoding'%((time.time() - start_time)/60))
 
 
 	# Feature Engineering -- Creating lag based feature 
@@ -177,8 +177,8 @@ def meanencoding_lagfeature():
 	new_train_df = train_test_df.iloc[:train_row]
 	new_test_df = train_test_df.iloc[train_row:]
 
-	new_train_df = new_train_df.drop(['item_id','cat_id','date_block_num','item_cnt_month'], axis=1)
-	new_test_df = new_test_df.drop(['item_id','cat_id','date_block_num','item_cnt_month'], axis=1)
+	new_train_df = new_train_df.drop(['shop_id','item_id','cat_id','date_block_num','item_cnt_month'], axis=1)
+	new_test_df = new_test_df.drop(['shop_id','item_id','cat_id','date_block_num','item_cnt_month'], axis=1)
 
 	new_train_df.head().to_csv('train_df_head.csv')
 	new_test_df.head().to_csv('test_df_head.csv')
